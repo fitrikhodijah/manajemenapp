@@ -3,14 +3,14 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // Import komponen halaman yang ada
 
-import Login from '../views/Login.vue'
+import Login from '../views/login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
 import TaskList from '../views/Tasklist.vue'
 import AddTask from '../views/AddTask.vue'
 import EditTask from '../views/EditTask.vue'
 import TaskHistory from '../views/TaskHistory.vue'
-import Profile from '../views/Profile.vue'
+import Profile from '../views/profile.vue'
 import NotFound from '../views/NotFound.vue'
 
 const routes = [
