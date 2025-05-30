@@ -1,11 +1,12 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Import komponen halaman
+// Import komponen halaman yang ada
+
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
-import TaskList from '../views/TaskList.vue'
+import TaskList from '../views/Tasklist.vue'
 import AddTask from '../views/AddTask.vue'
 import EditTask from '../views/EditTask.vue'
 import TaskHistory from '../views/TaskHistory.vue'
