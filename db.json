@@ -1,0 +1,283 @@
+{
+  "mataKuliah": [
+    {
+      "id": "mk1",
+      "namaMataKuliah": "Pemrograman Berbasis Komponen",
+      "kodeMataKuliah": "PBK101",
+      "sks": 3,
+      "semester": "Ganjil 2023/2024",
+      "dosen": "Prof. Dr. Andi Wijaya",
+      "status": "Aktif",
+      "userId": "1"
+    },
+    {
+      "id": "mk2",
+      "namaMataKuliah": "Struktur Data dan Algoritma",
+      "kodeMataKuliah": "SDA202",
+      "sks": 4,
+      "semester": "Ganjil 2023/2024",
+      "dosen": "Dr. Siti Aminah",
+      "status": "Aktif",
+      "userId": "1"
+    },
+    {
+      "id": "mk3",
+      "namaMataKuliah": "Basis Data Lanjut",
+      "kodeMataKuliah": "BDL303",
+      "sks": 3,
+      "semester": "Genap 2022/2023",
+      "dosen": "Ir. Budi Santoso, M.Kom.",
+      "status": "Selesai",
+      "userId": "1"
+    },
+    {
+      "id": "mk4",
+      "namaMataKuliah": "Jaringan Komputer Dasar",
+      "sks": 3,
+      "semester": "Ganjil 2023/2024",
+      "dosen": "Prof. Dr. Retno Lestari",
+      "status": "Aktif",
+      "kodeMataKuliah": "JKD102",
+      "userId": "2"
+    },
+    {
+      "id": "d1e5",
+      "namaMataKuliah": "sdds",
+      "kodeMataKuliah": "sddss",
+      "sks": 2,
+      "semester": "4",
+      "dosen": "afrizal",
+      "status": "Aktif",
+      "userId": "a901"
+    }
+  ],
+  "dashboard-summary-mahasiswa": {
+    "totalCoursesThisSemester": 6,
+    "pendingAssignments": 3,
+    "todaySchedule": "Algoritma (09:00-11:00), PBK (13:00-15:00)",
+    "balanceInfo": 500000,
+    "completedCourses": 2
+  },
+  "jadwal": [
+    {
+      "id": "j1",
+      "mataKuliah": "Pemrograman Berbasis Komponen",
+      "hari": "Senin",
+      "waktuMulai": "09:00",
+      "waktuSelesai": "11:00",
+      "ruangan": "Lab Komputer 1",
+      "dosen": "Prof. Dr. Andi Wijaya",
+      "userId": "1"
+    },
+    {
+      "id": "j2",
+      "mataKuliah": "Struktur Data dan Algoritma",
+      "hari": "Selasa",
+      "waktuMulai": "13:00",
+      "waktuSelesai": "15:00",
+      "ruangan": "Ruang Kuliah B2",
+      "dosen": "Dr. Siti Aminah",
+      "userId": "1"
+    },
+    {
+      "id": "j3",
+      "mataKuliah": "Jaringan Komputer Dasar",
+      "hari": "Kamis",
+      "waktuMulai": "08:00",
+      "waktuSelesai": "10:00",
+      "ruangan": "Auditorium",
+      "dosen": "Prof. Dr. Retno Lestari",
+      "userId": "1"
+    },
+    {
+      "id": "j4",
+      "mataKuliah": "Matematika Diskrit",
+      "hari": "Rabu",
+      "waktuMulai": "10:00",
+      "waktuSelesai": "12:00",
+      "ruangan": "Ruang Kuliah C1",
+      "dosen": "Dr. Budi Utomo",
+      "userId": "2"
+    }
+  ],
+  "tugas": [
+    {
+      "id": "tg1",
+      "judul": "Laporan Akhir PBK",
+      "deskripsi": "Membuat laporan akhir mata kuliah Pemrograman Berbasis Komponen.",
+      "tenggatWaktu": "2023-07-10",
+      "completed": true,
+      "fileLampiran": "laporan_pbk.pdf",
+      "userId": "1"
+    },
+    {
+      "id": "tg2",
+      "judul": "Tugas Besar Algoritma",
+      "deskripsi": "Implementasi algoritma sorting dan searching.",
+      "tenggatWaktu": "2023-07-15",
+      "completed": false,
+      "fileLampiran": "",
+      "userId": "1"
+    },
+    {
+      "id": "tg3",
+      "judul": "Resume Jaringan Komputer",
+      "deskripsi": "Membuat ringkasan materi Jaringan Komputer Bab 1-3.",
+      "tenggatWaktu": "2023-07-08",
+      "completed": true,
+      "fileLampiran": "",
+      "userId": "2"
+    },
+    {
+      "id": "5a2b",
+      "judul": "laporan prak pbk",
+      "deskripsi": "msa ams am s",
+      "tenggatWaktu": "2025-07-17",
+      "completed": false,
+      "fileLampiran": "",
+      "userId": "1"
+    }
+  ],
+  "catatan": [
+    {
+      "id": "c1",
+      "judul": "Catatan Kuliah PBK - Minggu 1",
+      "deskripsi": "Pengenalan Vue.js dan konsep komponen.",
+      "mataKuliah": "Pemrograman Berbasis Komponen",
+      "kategori": "Kuliah",
+      "tanggal": "2023-07-01",
+      "userId": "1"
+    },
+    {
+      "id": "c2",
+      "judul": "Ide Proyek Algoritma",
+      "deskripsi": "Mencoba algoritma Dijkstra untuk pathfinding.",
+      "mataKuliah": "Struktur Data dan Algoritma",
+      "kategori": "Ide",
+      "tanggal": "2023-07-02",
+      "userId": "1"
+    },
+    {
+      "id": "c3",
+      "judul": "Ringkasan Bab 4 Jaringan",
+      "deskripsi": "Protokol TCP/IP dan model OSI.",
+      "mataKuliah": "Jaringan Komputer Dasar",
+      "kategori": "Ringkasan",
+      "tanggal": "2023-06-29",
+      "userId": "2"
+    },
+    {
+      "id": "ccd1",
+      "judul": "dsd",
+      "deskripsi": "sfd",
+      "mataKuliah": "mtk",
+      "kategori": "uang",
+      "tanggal": "2025-07-03",
+      "userId": "0a0e"
+    },
+    {
+      "id": "5c74",
+      "judul": "laporan prak pbk",
+      "deskripsi": "xaa",
+      "mataKuliah": "xaaxx",
+      "kategori": "as",
+      "tanggal": "2025-07-03",
+      "userId": "6e5e"
+    }
+  ],
+  "nilai": [
+    {
+      "id": "n_mk1_sm1",
+      "mataKuliahId": "mk1",
+      "namaMataKuliah": "Pemrograman Berbasis Komponen",
+      "semester": "Ganjil 2023/2024",
+      "nilaiHuruf": "A",
+      "nilaiAngka": 4,
+      "sks": 3,
+      "userId": "1"
+    },
+    {
+      "id": "n_mk2_sm1",
+      "mataKuliahId": "mk2",
+      "namaMataKuliah": "Struktur Data dan Algoritma",
+      "semester": "Ganjil 2023/2024",
+      "nilaiHuruf": "B+",
+      "nilaiAngka": 3.5,
+      "sks": 4,
+      "userId": "1"
+    },
+    {
+      "id": "n_mk3_sm2",
+      "mataKuliahId": "mk3",
+      "namaMataKuliah": "Basis Data Lanjut",
+      "semester": "Genap 2022/2023",
+      "nilaiHuruf": "A-",
+      "nilaiAngka": 3.7,
+      "sks": 3,
+      "userId": "2"
+    }
+  ],
+  "keuangan": [
+    {
+      "id": "k1",
+      "tanggal": "2023-07-01",
+      "deskripsi": "Uang Saku Bulanan",
+      "jumlah": 1000000,
+      "tipe": "Pemasukan",
+      "kategori": "Uang Saku",
+      "userId": "1"
+    },
+    {
+      "id": "k2",
+      "tanggal": "2023-07-02",
+      "deskripsi": "Makan Siang Kampus",
+      "jumlah": 25000,
+      "tipe": "Pengeluaran",
+      "kategori": "Makanan",
+      "userId": "1"
+    },
+    {
+      "id": "k3",
+      "tanggal": "2023-07-02",
+      "deskripsi": "Transportasi Online",
+      "jumlah": 15000,
+      "tipe": "Pengeluaran",
+      "kategori": "Transportasi",
+      "userId": "1"
+    },
+    {
+      "id": "k4",
+      "tanggal": "2023-07-03",
+      "deskripsi": "Beli Buku Referensi PBK",
+      "jumlah": 150000,
+      "tipe": "Pengeluaran",
+      "kategori": "Pendidikan",
+      "userId": "2"
+    }
+  ],
+  "login": {
+    "user": {
+      "id": 1,
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "avatar": "https://via.placeholder.com/30/6a6ee0/ffffff?text=AD"
+    },
+    "token": "fake-jwt-token-for-admin"
+  },
+  "users": [
+    {
+      "id": "1",
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "password": "password123",
+      "avatar": "https://via.placeholder.com/30/6a6ee0/ffffff?text=AD"
+    },
+    {
+      "id": "2",
+      "name": "Olivia",
+      "email": "olivia@example.com",
+      "password": "password123",
+      "avatar": "https://via.placeholder.com/30/FF5733/FFFFFF?text=OL"
+    }
+  ]
+}
