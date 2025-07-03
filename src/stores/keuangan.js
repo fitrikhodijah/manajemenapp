@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
 import { useAuthStore } from './auth';
-import { useDashboardStore } from './dashboard';
+import { useDashboardStore } from './dashboard'; 
 
 export const useKeuanganStore = defineStore('keuangan', {
   state: () => ({
