@@ -13,7 +13,7 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  // --- Perbaikan: Tambahkan konfigurasi build untuk Rollup ---
+  // --- Perbaikan: Pastikan konfigurasi build untuk Rollup ini ada ---
   build: {
     rollupOptions: {
       external: ['pinia'], // Memberi tahu Rollup untuk memperlakukan 'pinia' sebagai dependensi eksternal

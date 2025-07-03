@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth';
 import Dashboard from '@/views/Dashboard.vue'
-import Login from '@/views/Login.vue'
+import Login from '@/views/login.vue'
 import NotFound from '@/views/NotFound.vue'
 import MataKuliahForm from '@/views/MataKuliahForm.vue'
 import MataKuliah from '@/views/MataKuliah.vue'
