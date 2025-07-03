@@ -124,6 +124,7 @@
   </template>
   
   <script setup>
+  
   import { ref, onMounted, computed } from 'vue';
   import { useCatatanStore } from '@/stores/catatan';
   import { useDashboardStore } from '@/stores/dashboard';
