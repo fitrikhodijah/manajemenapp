@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from 'node:url'
-
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
@@ -12,12 +11,5 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
-  },
-  // --- Perbaikan: Pastikan konfigurasi build untuk Rollup ini ada ---
-  build: {
-    rollupOptions: {
-      external: ['pinia'], // Memberi tahu Rollup untuk memperlakukan 'pinia' sebagai dependensi eksternal
-    },
-  },
-  // --- Akhir Perbaikan ---
+  }
 })

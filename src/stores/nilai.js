@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
-import { getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore'; // getFirestore dihapus dari impor
 import { useAuthStore } from './auth';
 import { useDashboardStore } from './dashboard';
+import { db } from '../main'; // Impor instance db dari main.js
 
 export const useNilaiStore = defineStore('nilai', {
   state: () => ({
@@ -14,7 +15,7 @@ export const useNilaiStore = defineStore('nilai', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
+        // Gunakan instance db yang diimpor
         const q = query(collection(db, "nilai"), where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
         this.nilaiList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -29,7 +30,7 @@ export const useNilaiStore = defineStore('nilai', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
+        // Gunakan instance db yang diimpor
         const docRef = doc(db, "nilai", id);
         const docSnap = await getDoc(docRef);
 
@@ -50,8 +51,11 @@ export const useNilaiStore = defineStore('nilai', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
+        // Gunakan instance db yang diimpor
         const nilaiToSave = { ...nilai, userId: userId };
+        if (nilaiToSave.id === undefined || nilaiToSave.id === null) {
+          delete nilaiToSave.id;
+        }
         const docRef = await addDoc(collection(db, "nilai"), nilaiToSave);
         this.nilaiList.push({ id: docRef.id, ...nilaiToSave });
 
@@ -71,7 +75,7 @@ export const useNilaiStore = defineStore('nilai', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
+        // Gunakan instance db yang diimpor
         const nilaiToUpdate = { ...updatedNilai, userId: userId };
         const docRef = doc(db, "nilai", id);
         await updateDoc(docRef, nilaiToUpdate);
@@ -97,7 +101,7 @@ export const useNilaiStore = defineStore('nilai', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
+        // Gunakan instance db yang diimpor
         const docRef = doc(db, "nilai", id);
         await deleteDoc(docRef);
 

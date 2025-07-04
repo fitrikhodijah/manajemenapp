@@ -1,6 +1,7 @@
-import { defineStore } from 'pinia';
-import { getFirestore, collection, getDocs, query, where, addDoc } from 'firebase/firestore'; // Impor fungsi Firebase Firestore
+import { defineStore } from 'pinia'; 
+import { collection, getDocs, query, where, addDoc } from 'firebase/firestore';
 import { useAuthStore } from './auth';
+import { db } from '../main';
 
 export const useDashboardStore = defineStore('dashboard', {
   state: () => ({
@@ -34,29 +35,21 @@ export const useDashboardStore = defineStore('dashboard', {
           return;
         }
 
-        const db = getFirestore();
-
-        // Ambil data Mata Kuliah dari Firestore
         const mataKuliahSnapshot = await getDocs(query(collection(db, "mataKuliah"), where("userId", "==", userId)));
         const mataKuliahUser = mataKuliahSnapshot.docs.map(doc => doc.data());
 
-        // Ambil data Tugas dari Firestore
         const tugasSnapshot = await getDocs(query(collection(db, "tugas"), where("userId", "==", userId)));
         const tugasUser = tugasSnapshot.docs.map(doc => doc.data());
 
-        // Ambil data Jadwal dari Firestore
         const jadwalSnapshot = await getDocs(query(collection(db, "jadwal"), where("userId", "==", userId)));
         const jadwalUser = jadwalSnapshot.docs.map(doc => doc.data());
 
-        // Ambil data Keuangan dari Firestore
         const keuanganSnapshot = await getDocs(query(collection(db, "keuangan"), where("userId", "==", userId)));
         const keuanganUser = keuanganSnapshot.docs.map(doc => doc.data());
 
-        // Ambil data Nilai dari Firestore
         const nilaiSnapshot = await getDocs(query(collection(db, "nilai"), where("userId", "==", userId)));
         const nilaiUser = nilaiSnapshot.docs.map(doc => doc.data());
 
-        // Hitung ulang metrik berdasarkan data user-specific dari Firestore
         const totalCoursesThisSemester = mataKuliahUser.filter(mk => mk.status === 'Aktif').length;
         const pendingAssignments = tugasUser.filter(t => !t.completed).length;
         
@@ -87,7 +80,6 @@ export const useDashboardStore = defineStore('dashboard', {
 
     async addActivity(activity, userId) {
       try {
-        const db = getFirestore();
         const notificationToSave = { ...activity, userId: userId };
         await addDoc(collection(db, "notifications"), notificationToSave);
       } catch (err) {

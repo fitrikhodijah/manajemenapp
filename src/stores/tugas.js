@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
-import { getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
-import { useAuthStore } from './auth'; // Impor store autentikasi
-import { useDashboardStore } from './dashboard'; // Impor store dashboard
+import { collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore'; // getFirestore dihapus dari impor
+import { useAuthStore } from './auth';
+import { useDashboardStore } from './dashboard';
+import { db } from '../main'; // Impor instance db dari main.js
 
 export const useTugasStore = defineStore('tugas', {
   state: () => ({
@@ -14,7 +15,7 @@ export const useTugasStore = defineStore('tugas', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
+        // Gunakan instance db yang diimpor
         const q = query(collection(db, "tugas"), where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
         this.tugasList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -29,7 +30,7 @@ export const useTugasStore = defineStore('tugas', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
+        // Gunakan instance db yang diimpor
         const docRef = doc(db, "tugas", id);
         const docSnap = await getDoc(docRef);
 
@@ -50,13 +51,11 @@ export const useTugasStore = defineStore('tugas', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        // --- Perbaikan di sini: Pastikan ID tidak disertakan saat addDoc ---
+        // Gunakan instance db yang diimpor
         const tugasToSave = { ...tugas, userId: userId };
         if (tugasToSave.id === undefined || tugasToSave.id === null) {
-          delete tugasToSave.id; // Hapus properti id jika undefined/null
+          delete tugasToSave.id;
         }
-        // --- Akhir Perbaikan ---
         const docRef = await addDoc(collection(db, "tugas"), tugasToSave);
         this.tugasList.push({ id: docRef.id, ...tugasToSave });
 
@@ -76,7 +75,7 @@ export const useTugasStore = defineStore('tugas', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
+        // Gunakan instance db yang diimpor
         const tugasToUpdate = { ...updatedTugas, userId: userId };
         const docRef = doc(db, "tugas", id);
         await updateDoc(docRef, tugasToUpdate);
@@ -102,7 +101,7 @@ export const useTugasStore = defineStore('tugas', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
+        // Gunakan instance db yang diimpor
         const docRef = doc(db, "tugas", id);
         await deleteDoc(docRef);
 

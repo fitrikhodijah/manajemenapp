@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
-import { getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
-import { useAuthStore } from './auth'; // Impor store autentikasi untuk mendapatkan userId
-import { useDashboardStore } from './dashboard'; // Impor store dashboard untuk memperbarui ringkasan
+import { collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
+import { useDashboardStore } from './dashboard';
+import { db } from '../main';
 
 export const useMataKuliahStore = defineStore('mataKuliah', {
   state: () => ({
@@ -14,7 +14,6 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
         const q = query(collection(db, "mataKuliah"), where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
         this.mataKuliahList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -29,7 +28,6 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
         const docRef = doc(db, "mataKuliah", id);
         const docSnap = await getDoc(docRef);
 
@@ -50,13 +48,10 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        // --- Perbaikan di sini: Pastikan ID tidak disertakan saat addDoc ---
         const mataKuliahToSave = { ...mataKuliah, userId: userId };
         if (mataKuliahToSave.id === undefined || mataKuliahToSave.id === null) {
-          delete mataKuliahToSave.id; // Hapus properti id jika undefined/null
+          delete mataKuliahToSave.id;
         }
-        // --- Akhir Perbaikan ---
         const docRef = await addDoc(collection(db, "mataKuliah"), mataKuliahToSave);
         this.mataKuliahList.push({ id: docRef.id, ...mataKuliahToSave });
 
@@ -76,7 +71,6 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
         const mataKuliahToUpdate = { ...updatedMataKuliah, userId: userId };
         const docRef = doc(db, "mataKuliah", id);
         await updateDoc(docRef, mataKuliahToUpdate);
@@ -102,11 +96,10 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
         const docRef = doc(db, "mataKuliah", id);
         await deleteDoc(docRef);
 
-        await this.fetchMataKuliah(userId); // Ambil ulang setelah penghapusan
+        await this.fetchMataKuliah(userId);
 
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();

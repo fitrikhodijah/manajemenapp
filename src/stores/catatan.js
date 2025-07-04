@@ -11,11 +11,15 @@ export const useCatatanStore = defineStore('catatan', {
     error: null,
   }),
   actions: {
+    /**
+     * Aksi untuk mengambil semua catatan dari Firestore untuk user tertentu.
+     * @param {string} userId - ID pengguna yang catatannya akan diambil.
+     */
     async fetchCatatan(userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
+        // Gunakan instance db yang diimpor, bukan getFirestore()
         const q = query(collection(db, "catatan"), where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
         this.catatanList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -26,11 +30,17 @@ export const useCatatanStore = defineStore('catatan', {
       }
     },
 
+    /**
+     * Aksi untuk mengambil satu catatan berdasarkan ID dari Firestore untuk user tertentu.
+     * @param {string} id - ID catatan yang akan diambil.
+     * @param {string} userId - ID pengguna yang catatannya akan diambil.
+     * @returns {object|null} - Objek catatan jika ditemukan, null jika tidak.
+     */
     async fetchCatatanById(id, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
+        // Gunakan instance db yang diimpor, bukan getFirestore()
         const docRef = doc(db, "catatan", id);
         const docSnap = await getDoc(docRef);
 
@@ -47,11 +57,17 @@ export const useCatatanStore = defineStore('catatan', {
       }
     },
 
+    /**
+     * Aksi untuk menambahkan catatan baru ke Firestore untuk user tertentu.
+     * @param {object} catatan - Objek catatan yang akan ditambahkan.
+     * @param {string} userId - ID pengguna yang akan memiliki catatan ini.
+     * @returns {boolean} - True jika berhasil, false jika gagal.
+     */
     async addCatatan(catatan, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
+        // Gunakan instance db yang diimpor, bukan getFirestore()
         const catatanToSave = { ...catatan, userId: userId };
         if (catatanToSave.id === undefined || catatanToSave.id === null) {
           delete catatanToSave.id;
@@ -71,11 +87,18 @@ export const useCatatanStore = defineStore('catatan', {
       }
     },
 
+    /**
+     * Aksi untuk memperbarui catatan yang sudah ada di Firestore untuk user tertentu.
+     * @param {string} id - ID catatan yang akan diperbarui.
+     * @param {object} updatedCatatan - Objek catatan dengan data yang diperbarui.
+     * @param {string} userId - ID pengguna yang memiliki catatan ini.
+     * @returns {boolean} - True jika berhasil, false jika gagal.
+     */
     async updateCatatan(id, updatedCatatan, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
+        // Gunakan instance db yang diimpor, bukan getFirestore()
         const catatanToUpdate = { ...updatedCatatan, userId: userId };
         const docRef = doc(db, "catatan", id);
         await updateDoc(docRef, catatanToUpdate);
@@ -97,11 +120,17 @@ export const useCatatanStore = defineStore('catatan', {
       }
     },
 
+    /**
+     * Aksi untuk menghapus catatan dari Firestore untuk user tertentu.
+     * @param {string} id - ID catatan yang akan dihapus.
+     * @param {string} userId - ID pengguna yang memiliki catatan ini.
+     * @returns {boolean} - True jika berhasil, false jika gagal.
+     */
     async deleteCatatan(id, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
+        // Gunakan instance db yang diimpor, bukan getFirestore()
         const docRef = doc(db, "catatan", id);
         await deleteDoc(docRef);
 
