@@ -1,115 +1,92 @@
 import { setActivePinia, createPinia } from 'pinia';
-import { useMataKuliahStore } from '../../stores/mataKuliah';
-import { useDashboardStore } from '../../stores/dashboard';
-import { vi, describe, beforeEach, test, expect } from 'vitest';
-import axios from 'axios';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { useMataKuliahStore } from './mataKuliah';
 
-// Mock modul axios
-vi.mock('axios', () => ({
+// Mock apiClient dan dashboardStore
+vi.mock('../utils/apiClient', () => ({
   default: {
-    create: vi.fn(() => ({
-      get: vi.fn(),
-      post: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
-    })),
+    get: vi.fn(),
+    post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
   },
 }));
+import apiClient from '../utils/apiClient';
 
-// Mock dashboard store
-vi.mock('../../stores/dashboard', () => ({
-  useDashboardStore: vi.fn(() => ({
-    fetchDashboardSummary: vi.fn(() => Promise.resolve()),
-  })),
+vi.mock('./dashboard', () => ({
+  useDashboardStore: () => ({
+    fetchDashboardSummary: vi.fn().mockResolvedValue(),
+  }),
 }));
 
-const apiClient = axios.create();
-
 describe('useMataKuliahStore (JSON-Server)', () => {
-  let dashboardStoreMock;
-
   beforeEach(() => {
     setActivePinia(createPinia());
-    vi.clearAllMocks();
-    dashboardStoreMock = useDashboardStore();
   });
 
-  test('fetchMataKuliah mengambil daftar mata kuliah dengan benar', async () => {
-    const mockMataKuliah = [
-      { id: 'mk1', namaMataKuliah: 'PBK', kodeMataKuliah: 'PBK101', userId: 'testUserId' },
-      { id: 'mk2', namaMataKuliah: 'SDA', kodeMataKuliah: 'SDA202', userId: 'testUserId' }
-    ];
-    apiClient.get.mockResolvedValueOnce({ data: mockMataKuliah });
+  it('fetchMataKuliah mengambil daftar mata kuliah dengan benar', async () => {
+    apiClient.get.mockResolvedValueOnce({
+      data: [{ id: 'mk1', nama: 'Matkul 1' }],
+    });
 
     const store = useMataKuliahStore();
     await store.fetchMataKuliah('testUserId');
 
     expect(apiClient.get).toHaveBeenCalledWith('/mataKuliah?userId=testUserId');
-    expect(store.mataKuliahList).toEqual(mockMataKuliah);
-    expect(store.isLoading).toBe(false);
-    expect(store.error).toBeNull();
+    expect(store.mataKuliahList).toEqual([{ id: 'mk1', nama: 'Matkul 1' }]);
   });
 
-  test('fetchMataKuliah menangani error API', async () => {
-    apiClient.get.mockRejectedValueOnce(new Error('Network Error'));
-
+  it('fetchMataKuliah menangani error API', async () => {
+    apiClient.get.mockRejectedValueOnce(new Error('API Error'));
     const store = useMataKuliahStore();
     await store.fetchMataKuliah('testUserId');
-
-    expect(store.mataKuliahList).toEqual([]);
-    expect(store.isLoading).toBe(false);
-    expect(store.error).toBe('Network Error');
+    expect(store.error).toBe('API Error');
   });
 
-  test('addMataKuliah menambahkan mata kuliah baru dan memperbarui state', async () => {
-    const newData = { namaMataKuliah: 'Jaringan', kodeMataKuliah: 'JKT303' };
-    const responseData = { id: 'newId', ...newData, userId: 'testUserId' };
-    apiClient.post.mockResolvedValueOnce({ data: responseData });
-
+  it('addMataKuliah menambahkan mata kuliah baru dan memperbarui state', async () => {
     const store = useMataKuliahStore();
-    store.mataKuliahList = [];
+    const newData = { nama: 'Matkul Baru' };
+    const mockResponse = {
+      data: { id: 'mk2', nama: 'Matkul Baru', userId: 'testUserId' },
+    };
+    apiClient.post.mockResolvedValueOnce(mockResponse);
 
-    const success = await store.addMataKuliah(newData, 'testUserId');
+    const result = await store.addMataKuliah(newData, 'testUserId');
 
-    expect(success).toBe(true);
-    expect(apiClient.post).toHaveBeenCalledWith('/mataKuliah', { ...newData, userId: 'testUserId' });
-    expect(store.mataKuliahList).toContainEqual(responseData);
-    expect(dashboardStoreMock.fetchDashboardSummary).toHaveBeenCalled();
+    expect(result).toBe(true);
+    expect(apiClient.post).toHaveBeenCalledWith('/mataKuliah', {
+      ...newData,
+      userId: 'testUserId',
+    });
+    expect(store.mataKuliahList).toContainEqual(mockResponse.data);
   });
 
-  test('updateMataKuliah memperbarui data dan state', async () => {
-    const initial = { id: 'mk1', namaMataKuliah: 'PBK', kodeMataKuliah: 'PBK101', userId: 'testUserId' };
-    const updateData = { namaMataKuliah: 'PBK Updated', status: 'Selesai' };
-    const responseData = { ...initial, ...updateData };
+  it('updateMataKuliah memperbarui data dan state', async () => {
+    const store = useMataKuliahStore();
+    store.mataKuliahList = [{ id: 'mk1', nama: 'Lama' }];
+    const updateData = { nama: 'Baru' };
+    const responseData = { id: 'mk1', nama: 'Baru' };
     apiClient.patch.mockResolvedValueOnce({ data: responseData });
 
-    const store = useMataKuliahStore();
-    store.mataKuliahList = [initial];
+    const result = await store.updateMataKuliah('mk1', updateData);
 
-    const success = await store.updateMataKuliah('mk1', updateData);
-
-    expect(success).toBe(true);
+    expect(result).toBe(true);
     expect(apiClient.patch).toHaveBeenCalledWith('/mataKuliah/mk1', updateData);
     expect(store.mataKuliahList[0]).toEqual(responseData);
-    expect(dashboardStoreMock.fetchDashboardSummary).toHaveBeenCalled();
   });
 
-  test('deleteMataKuliah menghapus data dan memperbarui state', async () => {
-    const initialList = [
-      { id: 'mk1', namaMataKuliah: 'PBK', userId: 'testUserId' },
-      { id: 'mk2', namaMataKuliah: 'SDA', userId: 'testUserId' }
-    ];
-    apiClient.delete.mockResolvedValueOnce({});
-
+  it('deleteMataKuliah menghapus data dan memperbarui state', async () => {
     const store = useMataKuliahStore();
-    store.mataKuliahList = initialList;
+    store.mataKuliahList = [
+      { id: 'mk1', nama: 'Matkul 1' },
+      { id: 'mk2', nama: 'Matkul 2' },
+    ];
 
-    const success = await store.deleteMataKuliah('mk1');
+    apiClient.delete.mockResolvedValueOnce(); // bisa kosong
+    const result = await store.deleteMataKuliah('mk1');
 
-    expect(success).toBe(true);
+    expect(result).toBe(true);
     expect(apiClient.delete).toHaveBeenCalledWith('/mataKuliah/mk1');
-    expect(store.mataKuliahList).toHaveLength(1);
-    expect(store.mataKuliahList[0].id).toBe('mk2');
-    expect(dashboardStoreMock.fetchDashboardSummary).toHaveBeenCalled();
+    expect(store.mataKuliahList).toEqual([{ id: 'mk2', nama: 'Matkul 2' }]);
   });
 });

@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import apiClient from '../utils/apiClient'; // GUNAKAN apiClient dari file terpisah
 import { useDashboardStore } from './dashboard';
-
-// Instance axios bisa diimpor dari file konfigurasi terpusat
-const apiClient = axios.create({
-  baseURL: 'http://localhost:3000', // Sesuaikan port jika berbeda
-});
 
 export const useMataKuliahStore = defineStore('mataKuliah', {
   state: () => ({
@@ -69,7 +64,6 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
         const response = await apiClient.post('/mataKuliah', mataKuliahToSave);
         this.mataKuliahList.push(response.data);
 
-        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -98,7 +92,6 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
           this.mataKuliahList[index] = response.data;
         }
 
-        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -123,7 +116,6 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
         await apiClient.delete(`/mataKuliah/${id}`);
         this.mataKuliahList = this.mataKuliahList.filter(mk => mk.id !== id);
 
-        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
