@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia';
-import { collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
-import { useAuthStore } from './auth';
-import { useDashboardStore } from './dashboard';
-import { db } from '../main'; // Impor instance db dari main.js
+import axios from 'axios';
+
+// Buat instance axios dengan URL dasar ke json-server Anda
+// Ini bisa dibuat di file terpisah dan diimpor jika digunakan di banyak tempat
+const apiClient = axios.create({
+  baseURL: 'http://localhost:3000', // Sesuaikan port jika berbeda
+});
 
 export const useCatatanStore = defineStore('catatan', {
   state: () => ({
@@ -12,17 +15,16 @@ export const useCatatanStore = defineStore('catatan', {
   }),
   actions: {
     /**
-     * Aksi untuk mengambil semua catatan dari Firestore untuk user tertentu.
+     * Aksi untuk mengambil semua catatan dari json-server untuk user tertentu.
      * @param {string} userId - ID pengguna yang catatannya akan diambil.
      */
     async fetchCatatan(userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor, bukan getFirestore()
-        const q = query(collection(db, "catatan"), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-        this.catatanList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Mengambil catatan yang memiliki userId yang cocok
+        const response = await apiClient.get(`/catatan?userId=${userId}`);
+        this.catatanList = response.data;
       } catch (err) {
         this.error = err.message;
       } finally {
@@ -31,23 +33,22 @@ export const useCatatanStore = defineStore('catatan', {
     },
 
     /**
-     * Aksi untuk mengambil satu catatan berdasarkan ID dari Firestore untuk user tertentu.
+     * Aksi untuk mengambil satu catatan berdasarkan ID dari json-server.
      * @param {string} id - ID catatan yang akan diambil.
-     * @param {string} userId - ID pengguna yang catatannya akan diambil.
+     * @param {string} userId - ID pengguna untuk verifikasi kepemilikan.
      * @returns {object|null} - Objek catatan jika ditemukan, null jika tidak.
      */
     async fetchCatatanById(id, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor, bukan getFirestore()
-        const docRef = doc(db, "catatan", id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists() && docSnap.data().userId === userId) {
-          return { id: docSnap.id, ...docSnap.data() };
+        const response = await apiClient.get(`/catatan/${id}`);
+        
+        // Verifikasi apakah catatan ini milik pengguna yang sedang login
+        if (response.data && response.data.userId === userId) {
+          return response.data;
         } else {
-          throw new Error(`Catatan dengan ID ${id} tidak ditemukan atau bukan milik pengguna ini.`);
+          throw new Error(`Catatan tidak ditemukan atau Anda tidak memiliki akses.`);
         }
       } catch (err) {
         this.error = err.message;
@@ -58,7 +59,7 @@ export const useCatatanStore = defineStore('catatan', {
     },
 
     /**
-     * Aksi untuk menambahkan catatan baru ke Firestore untuk user tertentu.
+     * Aksi untuk menambahkan catatan baru ke json-server.
      * @param {object} catatan - Objek catatan yang akan ditambahkan.
      * @param {string} userId - ID pengguna yang akan memiliki catatan ini.
      * @returns {boolean} - True jika berhasil, false jika gagal.
@@ -67,16 +68,15 @@ export const useCatatanStore = defineStore('catatan', {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor, bukan getFirestore()
         const catatanToSave = { ...catatan, userId: userId };
-        if (catatanToSave.id === undefined || catatanToSave.id === null) {
-          delete catatanToSave.id;
-        }
-        const docRef = await addDoc(collection(db, "catatan"), catatanToSave);
-        this.catatanList.push({ id: docRef.id, ...catatanToSave });
+        const response = await apiClient.post('/catatan', catatanToSave);
+        
+        // Tambahkan catatan baru ke state lokal
+        this.catatanList.push(response.data);
 
-        const dashboardStore = useDashboardStore();
-        await dashboardStore.fetchDashboardSummary();
+        // TODO: Panggil aksi untuk update dashboard jika diperlukan
+        // const dashboardStore = useDashboardStore();
+        // await dashboardStore.fetchDashboardSummary();
 
         return true;
       } catch (err) {
@@ -88,28 +88,26 @@ export const useCatatanStore = defineStore('catatan', {
     },
 
     /**
-     * Aksi untuk memperbarui catatan yang sudah ada di Firestore untuk user tertentu.
+     * Aksi untuk memperbarui catatan yang sudah ada di json-server.
      * @param {string} id - ID catatan yang akan diperbarui.
      * @param {object} updatedCatatan - Objek catatan dengan data yang diperbarui.
-     * @param {string} userId - ID pengguna yang memiliki catatan ini.
      * @returns {boolean} - True jika berhasil, false jika gagal.
      */
-    async updateCatatan(id, updatedCatatan, userId) {
+    async updateCatatan(id, updatedCatatan) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor, bukan getFirestore()
-        const catatanToUpdate = { ...updatedCatatan, userId: userId };
-        const docRef = doc(db, "catatan", id);
-        await updateDoc(docRef, catatanToUpdate);
+        const response = await apiClient.patch(`/catatan/${id}`, updatedCatatan);
 
+        // Perbarui state lokal dengan data yang sudah diupdate
         const index = this.catatanList.findIndex(c => c.id === id);
         if (index !== -1) {
-          this.catatanList[index] = { id: id, ...catatanToUpdate };
+          this.catatanList[index] = response.data;
         }
 
-        const dashboardStore = useDashboardStore();
-        await dashboardStore.fetchDashboardSummary();
+        // TODO: Panggil aksi untuk update dashboard jika diperlukan
+        // const dashboardStore = useDashboardStore();
+        // await dashboardStore.fetchDashboardSummary();
 
         return true;
       } catch (err) {
@@ -121,23 +119,22 @@ export const useCatatanStore = defineStore('catatan', {
     },
 
     /**
-     * Aksi untuk menghapus catatan dari Firestore untuk user tertentu.
+     * Aksi untuk menghapus catatan dari json-server.
      * @param {string} id - ID catatan yang akan dihapus.
-     * @param {string} userId - ID pengguna yang memiliki catatan ini.
      * @returns {boolean} - True jika berhasil, false jika gagal.
      */
-    async deleteCatatan(id, userId) {
+    async deleteCatatan(id) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor, bukan getFirestore()
-        const docRef = doc(db, "catatan", id);
-        await deleteDoc(docRef);
+        await apiClient.delete(`/catatan/${id}`);
 
-        await this.fetchCatatan(userId);
+        // Hapus dari state lokal tanpa perlu fetch ulang
+        this.catatanList = this.catatanList.filter(c => c.id !== id);
 
-        const dashboardStore = useDashboardStore();
-        await dashboardStore.fetchDashboardSummary();
+        // TODO: Panggil aksi untuk update dashboard jika diperlukan
+        // const dashboardStore = useDashboardStore();
+        // await dashboardStore.fetchDashboardSummary();
 
         return true;
       } catch (err) {

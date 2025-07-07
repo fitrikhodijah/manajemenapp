@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia';
-import { getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
-import { useAuthStore } from './auth';
+import axios from 'axios';
 import { useDashboardStore } from './dashboard';
+
+// Instance axios bisa diimpor dari file konfigurasi terpusat
+const apiClient = axios.create({
+  baseURL: 'http://localhost:3000', // Sesuaikan port jika berbeda
+});
 
 export const useKeuanganStore = defineStore('keuangan', {
   state: () => ({
@@ -10,14 +14,16 @@ export const useKeuanganStore = defineStore('keuangan', {
     error: null,
   }),
   actions: {
+    /**
+     * Mengambil semua transaksi untuk pengguna tertentu dari json-server.
+     * @param {string} userId - ID pengguna.
+     */
     async fetchTransaksi(userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        const q = query(collection(db, "keuangan"), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-        this.transaksiList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const response = await apiClient.get(`/keuangan?userId=${userId}`);
+        this.transaksiList = response.data;
       } catch (err) {
         this.error = err.message;
       } finally {
@@ -25,18 +31,21 @@ export const useKeuanganStore = defineStore('keuangan', {
       }
     },
 
+    /**
+     * Mengambil satu transaksi berdasarkan ID.
+     * @param {string} id - ID transaksi.
+     * @param {string} userId - ID pengguna untuk verifikasi.
+     * @returns {object|null}
+     */
     async fetchTransaksiById(id, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        const docRef = doc(db, "keuangan", id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists() && docSnap.data().userId === userId) {
-          return { id: docSnap.id, ...docSnap.data() };
+        const response = await apiClient.get(`/keuangan/${id}`);
+        if (response.data && response.data.userId === userId) {
+          return response.data;
         } else {
-          throw new Error(`Transaksi dengan ID ${id} tidak ditemukan atau bukan milik pengguna ini.`);
+          throw new Error(`Transaksi tidak ditemukan atau Anda tidak memiliki akses.`);
         }
       } catch (err) {
         this.error = err.message;
@@ -46,21 +55,21 @@ export const useKeuanganStore = defineStore('keuangan', {
       }
     },
 
+    /**
+     * Menambahkan transaksi baru.
+     * @param {object} transaksi - Data transaksi baru.
+     * @param {string} userId - ID pengguna.
+     * @returns {boolean}
+     */
     async addTransaksi(transaksi, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // --- Perbaikan di sini: Pastikan ID tidak disertakan saat addDoc ---
         const transaksiToSave = { ...transaksi, userId: userId };
-        if (transaksiToSave.id === undefined || transaksiToSave.id === null) {
-          delete transaksiToSave.id; // Hapus properti id jika undefined/null
-        }
-        // --- Akhir Perbaikan ---
+        const response = await apiClient.post('/keuangan', transaksiToSave);
+        this.transaksiList.push(response.data);
 
-        const db = getFirestore();
-        const docRef = await addDoc(collection(db, "keuangan"), transaksiToSave);
-        this.transaksiList.push({ id: docRef.id, ...transaksiToSave });
-
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -73,20 +82,23 @@ export const useKeuanganStore = defineStore('keuangan', {
       }
     },
 
-    async updateTransaksi(id, updatedTransaksi, userId) {
+    /**
+     * Memperbarui transaksi yang ada.
+     * @param {string} id - ID transaksi.
+     * @param {object} updatedTransaksi - Data transaksi yang diperbarui.
+     * @returns {boolean}
+     */
+    async updateTransaksi(id, updatedTransaksi) {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        const transaksiToUpdate = { ...updatedTransaksi, userId: userId };
-        const docRef = doc(db, "keuangan", id);
-        await updateDoc(docRef, transaksiToUpdate);
-
+        const response = await apiClient.patch(`/keuangan/${id}`, updatedTransaksi);
         const index = this.transaksiList.findIndex(t => t.id === id);
         if (index !== -1) {
-          this.transaksiList[index] = { id: id, ...transaksiToUpdate };
+          this.transaksiList[index] = response.data;
         }
 
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -99,16 +111,19 @@ export const useKeuanganStore = defineStore('keuangan', {
       }
     },
 
-    async deleteTransaksi(id, userId) {
+    /**
+     * Menghapus transaksi.
+     * @param {string} id - ID transaksi.
+     * @returns {boolean}
+     */
+    async deleteTransaksi(id) {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        const docRef = doc(db, "keuangan", id);
-        await deleteDoc(docRef);
+        await apiClient.delete(`/keuangan/${id}`);
+        this.transaksiList = this.transaksiList.filter(t => t.id !== id);
 
-        await this.fetchTransaksi(userId);
-
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 

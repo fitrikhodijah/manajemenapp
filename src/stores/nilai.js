@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia';
-import { collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore'; // getFirestore dihapus dari impor
-import { useAuthStore } from './auth';
+import axios from 'axios';
 import { useDashboardStore } from './dashboard';
-import { db } from '../main'; // Impor instance db dari main.js
+
+// Instance axios bisa diimpor dari file konfigurasi terpusat
+const apiClient = axios.create({
+  baseURL: 'http://localhost:3000', // Sesuaikan port jika berbeda
+});
 
 export const useNilaiStore = defineStore('nilai', {
   state: () => ({
@@ -11,14 +14,16 @@ export const useNilaiStore = defineStore('nilai', {
     error: null,
   }),
   actions: {
+    /**
+     * Mengambil semua nilai untuk pengguna tertentu dari json-server.
+     * @param {string} userId - ID pengguna.
+     */
     async fetchNilai(userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
-        const q = query(collection(db, "nilai"), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-        this.nilaiList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const response = await apiClient.get(`/nilai?userId=${userId}`);
+        this.nilaiList = response.data;
       } catch (err) {
         this.error = err.message;
       } finally {
@@ -26,18 +31,21 @@ export const useNilaiStore = defineStore('nilai', {
       }
     },
 
+    /**
+     * Mengambil satu data nilai berdasarkan ID.
+     * @param {string} id - ID nilai.
+     * @param {string} userId - ID pengguna untuk verifikasi.
+     * @returns {object|null}
+     */
     async fetchNilaiById(id, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
-        const docRef = doc(db, "nilai", id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists() && docSnap.data().userId === userId) {
-          return { id: docSnap.id, ...docSnap.data() };
+        const response = await apiClient.get(`/nilai/${id}`);
+        if (response.data && response.data.userId === userId) {
+          return response.data;
         } else {
-          throw new Error(`Nilai dengan ID ${id} tidak ditemukan atau bukan milik pengguna ini.`);
+          throw new Error(`Nilai tidak ditemukan atau Anda tidak memiliki akses.`);
         }
       } catch (err) {
         this.error = err.message;
@@ -47,18 +55,21 @@ export const useNilaiStore = defineStore('nilai', {
       }
     },
 
+    /**
+     * Menambahkan data nilai baru.
+     * @param {object} nilai - Data nilai baru.
+     * @param {string} userId - ID pengguna.
+     * @returns {boolean}
+     */
     async addNilai(nilai, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
         const nilaiToSave = { ...nilai, userId: userId };
-        if (nilaiToSave.id === undefined || nilaiToSave.id === null) {
-          delete nilaiToSave.id;
-        }
-        const docRef = await addDoc(collection(db, "nilai"), nilaiToSave);
-        this.nilaiList.push({ id: docRef.id, ...nilaiToSave });
+        const response = await apiClient.post('/nilai', nilaiToSave);
+        this.nilaiList.push(response.data);
 
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -71,20 +82,23 @@ export const useNilaiStore = defineStore('nilai', {
       }
     },
 
-    async updateNilai(id, updatedNilai, userId) {
+    /**
+     * Memperbarui data nilai yang ada.
+     * @param {string} id - ID nilai.
+     * @param {object} updatedNilai - Data nilai yang diperbarui.
+     * @returns {boolean}
+     */
+    async updateNilai(id, updatedNilai) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
-        const nilaiToUpdate = { ...updatedNilai, userId: userId };
-        const docRef = doc(db, "nilai", id);
-        await updateDoc(docRef, nilaiToUpdate);
-
+        const response = await apiClient.patch(`/nilai/${id}`, updatedNilai);
         const index = this.nilaiList.findIndex(n => n.id === id);
         if (index !== -1) {
-          this.nilaiList[index] = { id: id, ...nilaiToUpdate };
+          this.nilaiList[index] = response.data;
         }
 
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -97,16 +111,19 @@ export const useNilaiStore = defineStore('nilai', {
       }
     },
 
-    async deleteNilai(id, userId) {
+    /**
+     * Menghapus data nilai.
+     * @param {string} id - ID nilai.
+     * @returns {boolean}
+     */
+    async deleteNilai(id) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
-        const docRef = doc(db, "nilai", id);
-        await deleteDoc(docRef);
+        await apiClient.delete(`/nilai/${id}`);
+        this.nilaiList = this.nilaiList.filter(n => n.id !== id);
 
-        await this.fetchNilai(userId);
-
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 

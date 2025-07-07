@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia';
-import { collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore'; // getFirestore dihapus dari impor
-import { useAuthStore } from './auth';
+import axios from 'axios';
 import { useDashboardStore } from './dashboard';
-import { db } from '../main'; // Impor instance db dari main.js
+
+// Instance axios bisa diimpor dari file konfigurasi terpusat
+const apiClient = axios.create({
+  baseURL: 'http://localhost:3000', // Sesuaikan port jika berbeda
+});
 
 export const useTugasStore = defineStore('tugas', {
   state: () => ({
@@ -11,14 +14,16 @@ export const useTugasStore = defineStore('tugas', {
     error: null,
   }),
   actions: {
+    /**
+     * Mengambil semua tugas untuk pengguna tertentu dari json-server.
+     * @param {string} userId - ID pengguna.
+     */
     async fetchTugas(userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
-        const q = query(collection(db, "tugas"), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-        this.tugasList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const response = await apiClient.get(`/tugas?userId=${userId}`);
+        this.tugasList = response.data;
       } catch (err) {
         this.error = err.message;
       } finally {
@@ -26,18 +31,21 @@ export const useTugasStore = defineStore('tugas', {
       }
     },
 
+    /**
+     * Mengambil satu data tugas berdasarkan ID.
+     * @param {string} id - ID tugas.
+     * @param {string} userId - ID pengguna untuk verifikasi.
+     * @returns {object|null}
+     */
     async fetchTugasById(id, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
-        const docRef = doc(db, "tugas", id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists() && docSnap.data().userId === userId) {
-          return { id: docSnap.id, ...docSnap.data() };
+        const response = await apiClient.get(`/tugas/${id}`);
+        if (response.data && response.data.userId === userId) {
+          return response.data;
         } else {
-          throw new Error(`Tugas dengan ID ${id} tidak ditemukan atau bukan milik pengguna ini.`);
+          throw new Error(`Tugas tidak ditemukan atau Anda tidak memiliki akses.`);
         }
       } catch (err) {
         this.error = err.message;
@@ -47,18 +55,21 @@ export const useTugasStore = defineStore('tugas', {
       }
     },
 
+    /**
+     * Menambahkan data tugas baru.
+     * @param {object} tugas - Data tugas baru.
+     * @param {string} userId - ID pengguna.
+     * @returns {boolean}
+     */
     async addTugas(tugas, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
         const tugasToSave = { ...tugas, userId: userId };
-        if (tugasToSave.id === undefined || tugasToSave.id === null) {
-          delete tugasToSave.id;
-        }
-        const docRef = await addDoc(collection(db, "tugas"), tugasToSave);
-        this.tugasList.push({ id: docRef.id, ...tugasToSave });
+        const response = await apiClient.post('/tugas', tugasToSave);
+        this.tugasList.push(response.data);
 
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -71,20 +82,23 @@ export const useTugasStore = defineStore('tugas', {
       }
     },
 
-    async updateTugas(id, updatedTugas, userId) {
+    /**
+     * Memperbarui data tugas yang ada.
+     * @param {string} id - ID tugas.
+     * @param {object} updatedTugas - Data tugas yang diperbarui.
+     * @returns {boolean}
+     */
+    async updateTugas(id, updatedTugas) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
-        const tugasToUpdate = { ...updatedTugas, userId: userId };
-        const docRef = doc(db, "tugas", id);
-        await updateDoc(docRef, tugasToUpdate);
-
+        const response = await apiClient.patch(`/tugas/${id}`, updatedTugas);
         const index = this.tugasList.findIndex(t => t.id === id);
         if (index !== -1) {
-          this.tugasList[index] = { id: id, ...tugasToUpdate };
+          this.tugasList[index] = response.data;
         }
 
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -97,16 +111,19 @@ export const useTugasStore = defineStore('tugas', {
       }
     },
 
-    async deleteTugas(id, userId) {
+    /**
+     * Menghapus data tugas.
+     * @param {string} id - ID tugas.
+     * @returns {boolean}
+     */
+    async deleteTugas(id) {
       this.isLoading = true;
       this.error = null;
       try {
-        // Gunakan instance db yang diimpor
-        const docRef = doc(db, "tugas", id);
-        await deleteDoc(docRef);
+        await apiClient.delete(`/tugas/${id}`);
+        this.tugasList = this.tugasList.filter(t => t.id !== id);
 
-        await this.fetchTugas(userId);
-
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 

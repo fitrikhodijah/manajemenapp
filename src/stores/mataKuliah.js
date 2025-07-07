@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia';
-import { collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
+import axios from 'axios';
 import { useDashboardStore } from './dashboard';
-import { db } from '../main';
+
+// Instance axios bisa diimpor dari file konfigurasi terpusat
+const apiClient = axios.create({
+  baseURL: 'http://localhost:3000', // Sesuaikan port jika berbeda
+});
 
 export const useMataKuliahStore = defineStore('mataKuliah', {
   state: () => ({
@@ -10,13 +14,16 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
     error: null,
   }),
   actions: {
+    /**
+     * Mengambil semua mata kuliah untuk pengguna tertentu dari json-server.
+     * @param {string} userId - ID pengguna.
+     */
     async fetchMataKuliah(userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        const q = query(collection(db, "mataKuliah"), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-        this.mataKuliahList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const response = await apiClient.get(`/mataKuliah?userId=${userId}`);
+        this.mataKuliahList = response.data;
       } catch (err) {
         this.error = err.message;
       } finally {
@@ -24,17 +31,21 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
       }
     },
 
+    /**
+     * Mengambil satu mata kuliah berdasarkan ID.
+     * @param {string} id - ID mata kuliah.
+     * @param {string} userId - ID pengguna untuk verifikasi.
+     * @returns {object|null}
+     */
     async fetchMataKuliahById(id, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        const docRef = doc(db, "mataKuliah", id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists() && docSnap.data().userId === userId) {
-          return { id: docSnap.id, ...docSnap.data() };
+        const response = await apiClient.get(`/mataKuliah/${id}`);
+        if (response.data && response.data.userId === userId) {
+          return response.data;
         } else {
-          throw new Error(`Mata Kuliah dengan ID ${id} tidak ditemukan atau bukan milik pengguna ini.`);
+          throw new Error(`Mata Kuliah tidak ditemukan atau Anda tidak memiliki akses.`);
         }
       } catch (err) {
         this.error = err.message;
@@ -44,17 +55,21 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
       }
     },
 
+    /**
+     * Menambahkan mata kuliah baru.
+     * @param {object} mataKuliah - Data mata kuliah baru.
+     * @param {string} userId - ID pengguna.
+     * @returns {boolean}
+     */
     async addMataKuliah(mataKuliah, userId) {
       this.isLoading = true;
       this.error = null;
       try {
         const mataKuliahToSave = { ...mataKuliah, userId: userId };
-        if (mataKuliahToSave.id === undefined || mataKuliahToSave.id === null) {
-          delete mataKuliahToSave.id;
-        }
-        const docRef = await addDoc(collection(db, "mataKuliah"), mataKuliahToSave);
-        this.mataKuliahList.push({ id: docRef.id, ...mataKuliahToSave });
+        const response = await apiClient.post('/mataKuliah', mataKuliahToSave);
+        this.mataKuliahList.push(response.data);
 
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -67,19 +82,23 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
       }
     },
 
-    async updateMataKuliah(id, updatedMataKuliah, userId) {
+    /**
+     * Memperbarui mata kuliah yang ada.
+     * @param {string} id - ID mata kuliah.
+     * @param {object} updatedMataKuliah - Data mata kuliah yang diperbarui.
+     * @returns {boolean}
+     */
+    async updateMataKuliah(id, updatedMataKuliah) {
       this.isLoading = true;
       this.error = null;
       try {
-        const mataKuliahToUpdate = { ...updatedMataKuliah, userId: userId };
-        const docRef = doc(db, "mataKuliah", id);
-        await updateDoc(docRef, mataKuliahToUpdate);
-
+        const response = await apiClient.patch(`/mataKuliah/${id}`, updatedMataKuliah);
         const index = this.mataKuliahList.findIndex(mk => mk.id === id);
         if (index !== -1) {
-          this.mataKuliahList[index] = { id: id, ...mataKuliahToUpdate };
+          this.mataKuliahList[index] = response.data;
         }
 
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -92,15 +111,19 @@ export const useMataKuliahStore = defineStore('mataKuliah', {
       }
     },
 
-    async deleteMataKuliah(id, userId) {
+    /**
+     * Menghapus mata kuliah.
+     * @param {string} id - ID mata kuliah.
+     * @returns {boolean}
+     */
+    async deleteMataKuliah(id) {
       this.isLoading = true;
       this.error = null;
       try {
-        const docRef = doc(db, "mataKuliah", id);
-        await deleteDoc(docRef);
+        await apiClient.delete(`/mataKuliah/${id}`);
+        this.mataKuliahList = this.mataKuliahList.filter(mk => mk.id !== id);
 
-        await this.fetchMataKuliah(userId);
-
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 

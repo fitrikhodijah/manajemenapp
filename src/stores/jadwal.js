@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia';
-import { getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
-import { useAuthStore } from './auth'; // Impor store autentikasi untuk mendapatkan userId
-import { useDashboardStore } from './dashboard'; // Impor store dashboard untuk memperbarui ringkasan
+import axios from 'axios';
+import { useDashboardStore } from './dashboard';
+
+// Instance axios bisa diimpor dari file konfigurasi terpusat
+const apiClient = axios.create({
+  baseURL: 'http://localhost:3000', // Sesuaikan port jika berbeda
+});
 
 export const useJadwalStore = defineStore('jadwal', {
   state: () => ({
@@ -10,14 +14,16 @@ export const useJadwalStore = defineStore('jadwal', {
     error: null,
   }),
   actions: {
+    /**
+     * Mengambil semua jadwal untuk pengguna tertentu dari json-server.
+     * @param {string} userId - ID pengguna.
+     */
     async fetchJadwal(userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        const q = query(collection(db, "jadwal"), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-        this.jadwalList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const response = await apiClient.get(`/jadwal?userId=${userId}`);
+        this.jadwalList = response.data;
       } catch (err) {
         this.error = err.message;
       } finally {
@@ -25,18 +31,21 @@ export const useJadwalStore = defineStore('jadwal', {
       }
     },
 
+    /**
+     * Mengambil satu jadwal berdasarkan ID.
+     * @param {string} id - ID jadwal.
+     * @param {string} userId - ID pengguna untuk verifikasi.
+     * @returns {object|null}
+     */
     async fetchJadwalById(id, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        const docRef = doc(db, "jadwal", id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists() && docSnap.data().userId === userId) {
-          return { id: docSnap.id, ...docSnap.data() };
+        const response = await apiClient.get(`/jadwal/${id}`);
+        if (response.data && response.data.userId === userId) {
+          return response.data;
         } else {
-          throw new Error(`Jadwal dengan ID ${id} tidak ditemukan atau bukan milik pengguna ini.`);
+          throw new Error(`Jadwal tidak ditemukan atau Anda tidak memiliki akses.`);
         }
       } catch (err) {
         this.error = err.message;
@@ -46,20 +55,21 @@ export const useJadwalStore = defineStore('jadwal', {
       }
     },
 
+    /**
+     * Menambahkan jadwal baru.
+     * @param {object} jadwal - Data jadwal baru.
+     * @param {string} userId - ID pengguna.
+     * @returns {boolean}
+     */
     async addJadwal(jadwal, userId) {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        // --- Perbaikan di sini: Pastikan ID tidak disertakan saat addDoc ---
         const jadwalToSave = { ...jadwal, userId: userId };
-        if (jadwalToSave.id === undefined || jadwalToSave.id === null) {
-          delete jadwalToSave.id; // Hapus properti id jika undefined/null
-        }
-        // --- Akhir Perbaikan ---
-        const docRef = await addDoc(collection(db, "jadwal"), jadwalToSave);
-        this.jadwalList.push({ id: docRef.id, ...jadwalToSave });
+        const response = await apiClient.post('/jadwal', jadwalToSave);
+        this.jadwalList.push(response.data);
 
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -72,20 +82,23 @@ export const useJadwalStore = defineStore('jadwal', {
       }
     },
 
-    async updateJadwal(id, updatedJadwal, userId) {
+    /**
+     * Memperbarui jadwal yang ada.
+     * @param {string} id - ID jadwal.
+     * @param {object} updatedJadwal - Data jadwal yang diperbarui.
+     * @returns {boolean}
+     */
+    async updateJadwal(id, updatedJadwal) {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        const jadwalToUpdate = { ...updatedJadwal, userId: userId };
-        const docRef = doc(db, "jadwal", id);
-        await updateDoc(docRef, jadwalToUpdate);
-
+        const response = await apiClient.patch(`/jadwal/${id}`, updatedJadwal);
         const index = this.jadwalList.findIndex(j => j.id === id);
         if (index !== -1) {
-          this.jadwalList[index] = { id: id, ...jadwalToUpdate };
+          this.jadwalList[index] = response.data;
         }
 
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
@@ -98,16 +111,19 @@ export const useJadwalStore = defineStore('jadwal', {
       }
     },
 
-    async deleteJadwal(id, userId) {
+    /**
+     * Menghapus jadwal.
+     * @param {string} id - ID jadwal.
+     * @returns {boolean}
+     */
+    async deleteJadwal(id) {
       this.isLoading = true;
       this.error = null;
       try {
-        const db = getFirestore();
-        const docRef = doc(db, "jadwal", id);
-        await deleteDoc(docRef);
+        await apiClient.delete(`/jadwal/${id}`);
+        this.jadwalList = this.jadwalList.filter(j => j.id !== id);
 
-        await this.fetchJadwal(userId);
-
+        // Perbarui ringkasan dashboard
         const dashboardStore = useDashboardStore();
         await dashboardStore.fetchDashboardSummary();
 
